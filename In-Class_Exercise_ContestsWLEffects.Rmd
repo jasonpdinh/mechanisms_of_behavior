@@ -1,0 +1,148 @@
+---
+title: "Contests and Winner Loser Effects"
+output: html_notebook
+---
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+
+install.packages("ggpubr")
+library(ggpubr)
+```
+
+
+#Vignette 1: Is carapace length a good predictor of contest outcome?
+```{r}
+cl_data <- read.csv("https://raw.githubusercontent.com/jasonpdinh/mechanisms_of_behavior/main/random_contests_logistic.csv")
+
+str(cl_data)
+```
+You'll notice that there are 3 columns:
+-contest_ID: names of the two individuals fighting
+-focal_win: 1 means that a randomly selected focal individual won the contest
+-rel_car_length: relative carapace length of focal individual versus opponent; 0 means they are equal size, negative means focal is smaller, positive means focal is larger
+
+Code Chunk 1.1 - build a regression model to see if winning probability is a function of relative carapace length. 
+```{r}
+logistic_regression <- 
+  glm(focal_win ~ rel_car_length, #create a model with focal_win as response variable and rel_car_length as explanatory variable
+      data = cl_data,
+      family = binomial())
+
+summary(logistic_regression)
+```
+
+Code Chunk 1.2 - visualize this model using ggplot 
+```{r}
+ggplot(cl_data, 
+       aes(x = rel_car_length, 
+           y = focal_win)) + 
+  geom_point() + 
+  geom_smooth(method = "glm",
+    method.args=list(family="binomial"))
+```
+
+#Vignette 2: Do snapping shrimp use cumulative assessment and/or mutual assessment? 
+We established that snapping shrimp do not use pure self assessment. Furthermore, we know that snapping shrimp contests escalate through three phases. We will determine if snapping shrimp use cumulative assessment, mutual assessment, or if they switch between phases. 
+
+```{r}
+#load the data
+assessment_data <- read.csv("https://raw.githubusercontent.com/jasonpdinh/mechanisms_of_behavior/main/sizematched_contests_byphase.csv")
+str(assessment_data)
+```
+This data frame has five columns:
+-contest_ID: name of two individuals in contest
+-avg_car_length: average carapace length of opponents (mm)
+-initiation_time: duration of initiation phase
+-pre-snapping_time: duration of pre-snapping phase
+-snapping_time: duration of snapping phase
+
+Mutual assessment predicts that there is no relationship between average carapace length and contest duration, whereas cumulative assessment predicts a positive relationship between the two. 
+
+Code Chunk 2.1: determine which assessment strategy is used in the initiation phase. 
+```{r}
+ggplot(assessment_data, 
+       mapping = aes(x = avg_car_length, 
+                     y = initiation_time)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  stat_cor() #stat_cor() is a new function we haven't seen yet. It is from the ggpubr package, and it plots the R and p-value of regressions. This makes it very useful for visually inspecting ggplots like we are today!
+```
+
+Code Chunk 2.1: determine which assessment strategy is used in the initiation phase. 
+```{r}
+ggplot(assessment_data, 
+       mapping = aes(x = avg_car_length, 
+                     y = presnapping_time)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  stat_cor()
+```
+
+```{r}
+ggplot(assessment_data, 
+       mapping = aes(x = avg_car_length, 
+                     y = snapping_time)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  stat_cor()
+```
+
+#How does previous contest success affect subsequent contest outcome? 
+```{r}
+winner_effect_data <- read.csv("https://raw.githubusercontent.com/jasonpdinh/mechanisms_of_behavior/main/winner_effect.csv")
+
+str(winner_effect_data)
+```
+There are 6 columns in this data set: 
+-Treatment: denotes whether the smaller individual won a contest the day before (small_winner), lost a contest the day before (small_loser), or neither contestant had recent experience (no_experience)
+-rel_car_length: relative carapace length of the large individual compared to the small individual. More positive numbers mean the size-discrepancy is larger, closer to 0 means they are similarly sized. 
+-small_win: 0 means that the small individual lost. 1 means that the small individual won. 
+-recent_winner_wins: 1 means that the individual that won the contest the day before won again, 0 means that the individual that won the contest the day before lost the day after
+
+Code Chunk 3.1: Next, we are going to filter the data so that we have a data frame for each treatment. We will use the function filter(), which is in the dplyr package that is included in the tidyverse. 
+```{r}
+small_winner <- filter(winner_effect_data, #we will filter the winner_effect_data data frame
+                       treatment == "small_winner") #to only include rows where treatment is small_winner
+
+small_loser <- filter(winner_effect_data, #we will filter the winner_effect_data data frame
+                       treatment == "small_loser") #to only include rows where treatment is small_winner
+
+no_experience <- filter(winner_effect_data, #we will filter the winner_effect_data data frame
+                       treatment == "no_experience") #to only include rows where treatment is small_winner
+```
+
+Code Chunk 3.2: plot logistic regressions to see if relative carapace length predicts the probability the smaller individual wins the contest.  
+```{r}
+ggplot(no_experience,
+       mapping = aes(x = rel_car_length, 
+                     y = small_win)) + 
+  geom_point() + 
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = F)
+```
+
+Code Chunk 3.3: do the same thing for contests where the small individual won the contest the day before. 
+```{r}
+ggplot(small_winner,
+       mapping = aes(x = rel_car_length, 
+                     y = small_win)) + 
+  geom_point() + 
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = F)
+```
+
+Code Chunk 3.3: do the same thing for contests where the small individual lost the contest the day before. 
+```{r}
+ggplot(small_loser,
+       mapping = aes(x = rel_car_length, 
+                     y = small_win)) + 
+  geom_point() + 
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = F)
+```
+

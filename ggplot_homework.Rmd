@@ -1,0 +1,160 @@
+---
+title: "Intro to ggplot2"
+author: Jason Dinh
+output:
+  html_document:
+    df_print: paged
+---
+
+#Load your packages
+First, we will install the tidyverse suite of packages - this includes ggplot2, which we will be using today, along with several other packages useful for wrangling and manipulating data. If you are interested in learning more about tidyverse, read here: https://www.tidyverse.org/packages/ 
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+```
+
+We will be using the iris data for this assignment. Iris is preloaded into R and gives measurements of sepal length/width and petal length/width from 3 species of irises. 
+
+Here, we are using the str() function to look at the data. 
+```{r}
+str(iris)
+```
+You can see that iris has 150 observations (50 for each species). You can also see the 5 column names, and the type of data stored in each column. 
+
+#Let's make our first plot! 
+
+ggplot2 allows you to represent your data using lines, points, shapes, colors, etc. ggplot works by "mapping" your data onto some graphical component, such as the graph axes or colors.
+
+##The formula for making ggplot figures...
+You begin all plots with the ggplot() function. Inside the ggplot function, you tell R which data you want to use. Then, you R  what relationship you would like to see inside the mapping = aes() argument. For example, if I wanted to plot sepal length against sepal width, I would type: ggplot(data = iris, mapping = aes(x = Sepal.Length, y = Sepal.Width)). 
+
+```{r}
+ggplot(data = iris, mapping = aes(x = Sepal.Length, y = Sepal.Width))
+```
+
+As you can see, ggplot2 has created a grid where sepal width is pltoted on the y-axis and sepal length is plotted on the x-axis. However, nothing is plotted yet! 
+
+We have to explicitly tell ggplot what kind of plot we want using "geoms". For instance, geom_point() produces a scatter plot, geom_smooth() produces a regression line, geom_bar() makes barplots, and geom_boxplot() makes boxplots. We specify geoms by literally "adding" geom functinos to our ggplot() function.
+
+Thus, general template for making a ggplot figure is:
+ggplot(data = <data frame>, 
+        mapping = aes((x = <some column in your data frame>
+                      y = <some other column in your data frame>
+        ))) + 
+  geom_FUNCTION()
+  
+We can produce the following scatterplot by using that basic formula. 
+```{r}
+ggplot(data = iris, #use iris as the data frame
+        mapping = aes(x = Sepal.Length, #put Sepal.Length on the x-axis
+                      y = Sepal.Width)) + #put Sepal.Width on the y-axis
+  geom_point() #show this as a scatter plot
+```
+
+You can map other columns onto figure aesthetics. For example, we can change the shape and color of the points based on their species by mapping them inside the aes() argument. 
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, #make each species a different color
+                      shape = Species)) + #make each species a different shape
+  geom_point()
+```
+
+###Build your figure in layers!
+Now, imagine that we want to layer a regression line on top of the figure. ggplot uses an additive layering process so you can add geoms on top of other geoms. This means that we can add a regression on top of our scatter plot by adding "+ geom_smooth()"
+
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth()
+```
+The default is for geom_smooth() to use a moving average, but you can change it to a linear model using the method argument: method = "lm"
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+You can add other functions to your ggplot that can change the way your plot appears. One common useful function to add is labs() which allows you to change your x and y axis titles. 
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  labs(x = "Sepal Length", 
+       y = "Sepal Width")
+```
+
+You can also add "themes" from the ggthemes package to change the overall aesthetic of your graph. 
+```{r}
+library(ggthemes)
+
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  labs(x = "Sepal Length", 
+       y = "Sepal Width") + 
+  theme_few()
+
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  labs(x = "Sepal Length", 
+       y = "Sepal Width") + 
+  theme_classic()
+
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width, 
+                      color = Species, 
+                      shape = Species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  labs(x = "Sepal Length", 
+       y = "Sepal Width") + 
+  theme_minimal()
+```
+
+###Mapping aesthetics unique to geoms. 
+If you map aesthetics into the ggplot() function, it will map these aesthetics on every single geom. You can also map aesthetics to specific geoms by putting the mapping argument into that particular geom. For instance, I could map colors into geom_point but have the regression line run through all the data by doing the following: 
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width)) + 
+  geom_point(mapping = aes(color = Species, 
+                      shape = Species)) + 
+  geom_smooth(method = "lm")
+```
+
+Because this graph has no color mapping specified in geom_smooth(), ggplot will create a single regression line through all of the data points. 
+
+Finally, you can set aesthetics that are unrelated to variables that you are mapping. For example, if I wanted the line in the plot above to be black, I can set that argument within the geom_smooth() function but outside of my mapped variables. 
+```{r}
+ggplot(data = iris, 
+        mapping = aes(x = Sepal.Length, 
+                      y = Sepal.Width)) + 
+  geom_point(mapping = aes(color = Species, 
+                      shape = Species)) + 
+  geom_smooth(method = "lm", 
+              color = "black")
+```
